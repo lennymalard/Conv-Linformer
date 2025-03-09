@@ -2,7 +2,6 @@ from datasets import load_dataset
 from transformers import RobertaTokenizerFast
 import h5py
 import re
-import numpy as np
 from random import random, choice
 from tqdm import tqdm
 import sys
@@ -56,7 +55,7 @@ def preprocessing_pipeline():
         token_count = 0
         buffer = []
         print(f"\nStarting preprocessing for the {seq_length} sequence length dataset...")
-        with h5py.File(f"{PATH}wikitext2_{seq_length}.hdf5", "w") as hf:
+        with h5py.File(f"{PATH}wikitext2_{seq_length}.hdf5", "w") as f:
             for i, text in enumerate(tqdm(dataset, file=sys.stdout)):
                 text = text['text']
                 text = text_cleaning(text)
@@ -69,23 +68,24 @@ def preprocessing_pipeline():
                 if len(buffer) > seq_length - 2:
                     while len(buffer) > seq_length:
                         masked_ids, mask, labels = mlm_masking(buffer[:seq_length - 1] + [SEP_ID], tokenizer)
-                        if 'data' in hf and 'mask' in hf and 'labels' in hf:
-                            data = hf['data'][:]
+                        if 'data' in f and 'mask' in f and 'labels' in f:
+                            data = f['data'][:]
                             new_shape = (data.shape[0] + 1, data.shape[1])
-                            hf['data'].resize(new_shape)
-                            hf['mask'].resize(new_shape)
-                            hf['labels'].resize(new_shape)
-                            hf['data'][-1, :] = masked_ids
-                            hf['mask'][-1, :] = mask
-                            hf['labels'][-1, :] = labels
+                            f['data'].resize(new_shape)
+                            f['mask'].resize(new_shape)
+                            f['labels'].resize(new_shape)
+                            f['data'][-1, :] = masked_ids
+                            f['mask'][-1, :] = mask
+                            f['labels'][-1, :] = labels
                         else:
-                            hf.create_dataset('data', data=[masked_ids], maxshape=(None, seq_length))
-                            hf.create_dataset('mask', data=[mask], maxshape=(None, seq_length))
-                            hf.create_dataset('labels', data=[labels], maxshape=(None, seq_length))
+                            f.create_dataset('data', data=[masked_ids], maxshape=(None, seq_length))
+                            f.create_dataset('mask', data=[mask], maxshape=(None, seq_length))
+                            f.create_dataset('labels', data=[labels], maxshape=(None, seq_length))
                         buffer = [CLS_ID] + buffer[seq_length - 1:]
                 if token_count > DATASET_TOKEN_SIZE:
                     break
         print(f"\nFinished preprocessing for the {seq_length} sequence length dataset.")
+        print(f"\nTotal tokens: {token_count}")
 
 if __name__ == "__main__":
     preprocessing_pipeline()
