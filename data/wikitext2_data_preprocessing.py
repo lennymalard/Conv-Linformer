@@ -8,9 +8,9 @@ import sys
 
 SEQ_LENGTHS = [128, 256, 512, 1024]
 DATASET_TOKEN_SIZE = 50_000_000
-PATH = "./pretraining/"
+PATH = "./pretraining/wikitext2"
 
-dataset = load_dataset("wikitext", "wikitext-2-v1", split="train",  streaming=True)
+dataset = load_dataset("wikitext", "wikitext-2-v1", split="validation",  streaming=True)
 tokenizer = RobertaTokenizerFast.from_pretrained("roberta-base")
 
 CLS_ID = tokenizer.cls_token_id
@@ -55,7 +55,7 @@ def preprocessing_pipeline():
         token_count = 0
         buffer = []
         print(f"\nStarting preprocessing for the {seq_length} sequence length dataset...")
-        with h5py.File(f"{PATH}wikitext2_{seq_length}.hdf5", "w") as f:
+        with h5py.File(f"{PATH}wikitext2_{seq_length}_validation.hdf5", "w") as f:
             for i, text in enumerate(tqdm(dataset, file=sys.stdout)):
                 text = text['text']
                 text = text_cleaning(text)

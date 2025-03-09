@@ -9,10 +9,10 @@ from linformer.reversible import ReversibleSequence, SequentialSequence
 class LinformerConfig(PretrainedConfig):
     def __init__(
             self,
-            num_tokens,
-            dim,
-            seq_len,
-            depth,
+            num_tokens=0,
+            dim=1024,
+            seq_len=512,
+            depth=6,
             k = 256,
             heads = 8,
             dim_head = None,
@@ -33,6 +33,9 @@ class LinformerConfig(PretrainedConfig):
         self.share_kv = share_kv
         self.reversible = reversible
         self.dropout = dropout
+
+    def __repr__(self):
+        return str(self.__dict__)
 
 # helper functions
 
@@ -202,10 +205,19 @@ class LinformerLM(PreTrainedModel):
             dropout = config.dropout
         )
         self.to_logits = nn.Linear(config.dim, config.num_tokens)
+        self.loss_fn = nn.CrossEntropyLoss()
 
-    def forward(self, x):
+    def forward(self, x, labels=None):
         x = self.token_emb(x)
         x = self.pos_emb(torch.arange(x.shape[1], device=x.device)) + x
         x = self.linformer(x)
         out = self.to_logits(x)
+        if labels is not None:
+            out = out.view(-1, self.config.num_tokens)
+            labels = labels.view(-1)
+            loss = self.loss_fn(out, labels)
+            return {
+                'logits': out,
+                 'loss': loss
+            }
         return out
