@@ -2,8 +2,37 @@ import math
 import torch
 from torch import nn
 import torch.nn.functional as F
+from transformers import PreTrainedModel, PretrainedConfig
 
 from linformer.reversible import ReversibleSequence, SequentialSequence
+
+class LinformerConfig(PretrainedConfig):
+    def __init__(
+            self,
+            num_tokens,
+            dim,
+            seq_len,
+            depth,
+            k = 256,
+            heads = 8,
+            dim_head = None,
+            one_kv_head = False,
+            share_kv = False,
+            reversible = False,
+            dropout = 0.
+    ):
+        super().__init__()
+        self.num_tokens = num_tokens
+        self.dim = dim
+        self.seq_len = seq_len
+        self.depth = depth
+        self.k = k
+        self.heads = heads
+        self.dim_head = dim_head
+        self.one_kv_head = one_kv_head
+        self.share_kv = share_kv
+        self.reversible = reversible
+        self.dropout = dropout
 
 # helper functions
 
@@ -153,14 +182,26 @@ class Linformer(nn.Module):
     def forward(self, x):
         return self.net(x)
 
-class LinformerLM(nn.Module):
-    def __init__(self, num_tokens, dim, seq_len, depth, k = 256, heads = 8, dim_head = None, one_kv_head = False, share_kv = False, reversible = False, dropout = 0.):
-        super().__init__()
-        self.token_emb = nn.Embedding(num_tokens, dim)
-        self.pos_emb = nn.Embedding(seq_len, dim)
-        self.linformer = Linformer(dim, seq_len, depth, k = k, heads = heads, dim_head = dim_head,
-                one_kv_head = one_kv_head, share_kv = share_kv, reversible = reversible, dropout = dropout)
-        self.to_logits = nn.Linear(dim, num_tokens)
+class LinformerLM(PreTrainedModel):
+    def __init__(self, config):
+        super().__init__(config)
+        self.config = config
+
+        self.token_emb = nn.Embedding(config.num_tokens, config.dim)
+        self.pos_emb = nn.Embedding(config.seq_len, config.dim)
+        self.linformer = Linformer(
+            config.dim,
+            config.seq_len,
+            config.depth,
+            k = config.k,
+            heads = config.heads,
+            dim_head = config.dim_head,
+            one_kv_head = config.one_kv_head,
+            share_kv = config.share_kv,
+            reversible = config.reversible,
+            dropout = config.dropout
+        )
+        self.to_logits = nn.Linear(config.dim, config.num_tokens)
 
     def forward(self, x):
         x = self.token_emb(x)
