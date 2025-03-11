@@ -1,16 +1,20 @@
 import os
+
+import torch.cuda
+
 from data.utils import MLMDataset
 from transformers import RobertaTokenizerFast, TrainingArguments, TrainerCallback, Trainer, default_data_collator, \
     TrainerState, TrainerControl, logging
 from torch.utils.data import DataLoader
 from linformer.linformer import *
+from transformer.transformer import *
 from tqdm import tqdm
 import sys
 import numpy as np
 from transformers.trainer_callback import PrinterCallback
 from math import ceil
 
-SEQ_LENGTH = 128
+SEQ_LENGTH = 256
 
 training_dataset = MLMDataset(F'../../data/pretraining/wikitext2/wikitext2_{SEQ_LENGTH}.hdf5')
 validation_dataset = MLMDataset(F'../../data/pretraining/wikitext2/wikitext2_{SEQ_LENGTH}_validation.hdf5')
@@ -35,31 +39,30 @@ def compute_metrics(pred):
 
 class TrainingCallback(TrainerCallback):
     def __init__(self):
-        self.max_memory = 0
         self.step_bar = None
 
-    def on_evaluate(self, args, state, control, **kwargs):
+    def on_train_begin(self, args, state, control, **kwargs):
         pass
 
-    def on_train_begin(self, args, state, control, **kwargs):
+    def on_epoch_begin(self, args, state, control, **kwargs):
         global BATCH_SIZE
         global FULL_BATCH_SIZE
-        self.step_bar = tqdm(total=ceil(args.num_train_epochs*FULL_BATCH_SIZE//BATCH_SIZE//args.gradient_accumulation_steps), file=sys.stdout, leave=True)
-
-    def on_epoch_begin(self, args, state, control, **kwargs):
-        print(f"Epoch {state.epoch}\n")
+        self.step_bar = tqdm(desc=f'Epoch {int(state.epoch)+1}', total=ceil(FULL_BATCH_SIZE//BATCH_SIZE//args.gradient_accumulation_steps), file=sys.stdout, leave=True)
 
     def on_step_begin(self, args, state, control, **kwargs):
         self.step_bar.update(1)
 
-    def on_epoch_end(self, args, state, control, **kwargs):
-        if torch.cuda.is_available():
-            current_memory = torch.cuda.memory_allocated() / 1024 ** 2
-            self.max_memory = max(current_memory, self.max_memory)
-            print(f"Epoch: {state.epoch} - Current memory allocated: {self.max_memory:.2f}MB")
+    def on_step_end(self, args, state, control, **kwargs):
+        pass
+
+    def on_epoch_end(self, args, state, control, logs=None, **kwargs):
+        self.step_bar.close()
 
     def on_train_end(self, args, state, control, **kwargs):
-        print(f"Max memory allocated: {self.max_memory}")
+        print(f"\nMax memory allocated: {torch.cuda.max_memory_allocated()}")
+
+    def on_evaluate(self, args, state, control, logs=None, **kwargs):
+        pass
 
 class CustomTrainer(Trainer):
     def create_progress_bar(self, *args, **kwargs):
@@ -68,8 +71,8 @@ class CustomTrainer(Trainer):
 config = LinformerConfig(
             num_tokens=tokenizer.vocab_size,
             dim=512,
-            seq_len=128,
-            depth=4,
+            seq_len=SEQ_LENGTH,
+            depth=8,
             k=128,
             heads=8,
             dim_head=None,
@@ -80,6 +83,16 @@ config = LinformerConfig(
 )
 
 model = LinformerLM(config)
+
+"""config = TransformerConfig(
+            num_tokens=tokenizer.vocab_size,
+            dim=512,
+            depth=8,
+            heads=8,
+            dropout=0.1
+)
+
+model = TransformerLM(config)"""
 
 training_args = TrainingArguments(
     output_dir=f'./pretrained_model/{SEQ_LENGTH}',
