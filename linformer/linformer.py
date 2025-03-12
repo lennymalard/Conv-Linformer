@@ -3,7 +3,6 @@ import torch
 from torch import nn
 import torch.nn.functional as F
 from transformers import PreTrainedModel, PretrainedConfig
-
 from linformer.reversible import ReversibleSequence, SequentialSequence
 
 class LinformerConfig(PretrainedConfig):

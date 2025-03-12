@@ -35,9 +35,9 @@ class LayerNorm(nn.Module):
         return self.gamma * ((x - mean)/(std + 1e-8)) + self.beta
 
 class Attention(nn.Module):
-    def __init__(self, head_size, dropout=0.1):
+    def __init__(self, dim_head, dropout=0.1):
         super().__init__()
-        self.head_size = head_size
+        self.dim_head = dim_head
         self.dropout = nn.Dropout(dropout)
 
     def forward(self, q, k, v, attn_mask=None, pad_mask=None):
@@ -46,26 +46,26 @@ class Attention(nn.Module):
             scores = scores.masked_fill(pad_mask.unsqueeze(1).unsqueeze(1) == 0, float('-inf'))
         if attn_mask is not None:
             scores = scores.masked_fill(attn_mask == 0, float('-inf'))
-        attn_weights = F.softmax(scores/sqrt(self.head_size), dim=-1)
+        attn_weights = F.softmax(scores/sqrt(self.dim_head), dim=-1)
         return self.dropout(attn_weights) @ v
 
 class MultiHeadAttention(nn.Module):
-    def __init__(self, embedding_size, num_heads, dropout=0.1):
+    def __init__(self, dim, heads, dropout=0.1):
         super().__init__()
-        assert embedding_size % num_heads == 0
+        assert dim % heads == 0
 
-        self.num_heads = num_heads
-        self.embedding_size = embedding_size
-        self.head_size = embedding_size // num_heads
+        self.heads = heads
+        self.dim = dim
+        self.dim_head = dim // heads
 
-        self.q_proj = nn.Linear(embedding_size, embedding_size)
-        self.k_proj = nn.Linear(embedding_size, embedding_size)
-        self.v_proj = nn.Linear(embedding_size, embedding_size)
+        self.q_proj = nn.Linear(dim, dim)
+        self.k_proj = nn.Linear(dim, dim)
+        self.v_proj = nn.Linear(dim, dim)
 
-        self.attention = Attention(self.head_size)
-        self.projection = nn.Linear(embedding_size, embedding_size)
+        self.attention = Attention(self.dim_head)
+        self.projection = nn.Linear(dim, dim)
         self.dropout = nn.Dropout(dropout)
-        self.layer_norm = LayerNorm(embedding_size)
+        self.layer_norm = LayerNorm(dim)
 
     def forward(self, q, k, v, attn_mask=None, pad_mask=None):
         x = q.clone()
@@ -73,21 +73,21 @@ class MultiHeadAttention(nn.Module):
         k_seq_len = k.shape[1]
         v_seq_len = v.shape[1]
 
-        q = self.q_proj(q).contiguous().view(-1, self.num_heads, q_seq_len, self.head_size)
-        k = self.k_proj(k).contiguous().view(-1, self.num_heads, k_seq_len, self.head_size)
-        v = self.v_proj(v).contiguous().view(-1, self.num_heads, v_seq_len, self.head_size)
+        q = self.q_proj(q).contiguous().view(-1, self.heads, q_seq_len, self.dim_head)
+        k = self.k_proj(k).contiguous().view(-1, self.heads, k_seq_len, self.dim_head)
+        v = self.v_proj(v).contiguous().view(-1, self.heads, v_seq_len, self.dim_head)
 
-        output = self.attention(q, k, v, attn_mask=attn_mask, pad_mask=pad_mask).reshape(-1, q_seq_len, self.embedding_size)
+        output = self.attention(q, k, v, attn_mask=attn_mask, pad_mask=pad_mask).reshape(-1, q_seq_len, self.dim)
         return self.layer_norm(x + self.projection(self.dropout(output)))
 
 class FeedForward(nn.Module):
-    def __init__(self, embedding_size, output_size, dropout=0.1):
+    def __init__(self, dim, hidden_dim, dropout=0.1):
         super().__init__()
-        self.linear1 = nn.Linear(embedding_size, output_size)
-        self.linear2 = nn.Linear(output_size, embedding_size)
+        self.linear1 = nn.Linear(dim, hidden_dim)
+        self.linear2 = nn.Linear(hidden_dim, dim)
         self.relu = nn.ReLU()
         self.dropout = nn.Dropout(dropout)
-        self.layer_norm = LayerNorm(embedding_size)
+        self.layer_norm = LayerNorm(dim)
 
     def forward(self, x):
         return self.layer_norm(x + self.dropout(self.linear2(self.relu(self.linear1(x)))))
@@ -111,8 +111,8 @@ class Transformer(nn.Module):
         super().__init__()
         self.layers = nn.ModuleList([
             nn.Sequential(
-                MultiHeadAttention(embedding_size=dim, num_heads=heads, dropout=dropout),
-                FeedForward(embedding_size=dim, output_size=2048)
+                MultiHeadAttention(dim=dim, heads=heads, dropout=dropout),
+                FeedForward(dim=dim, hidden_dim=2048)
             ) for _ in range(depth)
         ])
     
@@ -122,28 +122,7 @@ class Transformer(nn.Module):
             x = mha(x, x, x)
             x = ffn(x)
         return x
-
-class Encoder(nn.Module):
-    def __init__(self, vocab_size, padding_idx, num_layers=8):
-        super().__init__()
-        self.embedding = nn.Embedding(num_embeddings=vocab_size, embedding_dim=512, padding_idx=padding_idx)
-        self.positional_encoding = PositionalEncoding()
-        self.layers = nn.ModuleList([
-            nn.Sequential(
-                MultiHeadAttention(embedding_size=512, num_heads=8),
-                FeedForward(embedding_size=512, output_size=2048)
-            ) for _ in range(num_layers)
-        ])
-
-    def forward(self, x, attn_mask=None, pad_mask=None):
-        x = self.embedding(x)
-        x = self.positional_encoding(x)
-        for layer in self.layers:
-            mha, ffn = layer
-            x = mha(x, x, x, attn_mask=attn_mask, pad_mask=pad_mask)
-            x = ffn(x)
-        return x
-
+    
 class TransformerLM(PreTrainedModel):
     def __init__(self, config):
         super().__init__(config)
