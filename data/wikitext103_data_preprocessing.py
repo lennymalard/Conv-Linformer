@@ -60,7 +60,7 @@ def batch_preprocessing(text_batch):
         text = text_normalization(text)
         if not text or text.isspace():
             continue
-        ids.append(tokenizer.encode(text, add_special_tokens=True))
+        ids.append(tokenizer.encode(text, add_special_tokens=False))
     return ids
 
 def preprocessing_pipeline():
@@ -92,13 +92,13 @@ def preprocessing_pipeline():
                                 ids = ids[0]
                             buffer.extend(ids)
                             token_count += len(ids)
-                            if len(buffer) >= seq_length - 1:
-                                while len(buffer) >= seq_length - 1:
-                                    data, mask, labels = mlm_masking(buffer[:seq_length - 1] + [SEP_ID], tokenizer)
+                            if len(buffer) >= seq_length - 2:
+                                while len(buffer) >= seq_length - 2:
+                                    data, mask, labels = mlm_masking([CLS_ID] + buffer[:seq_length - 2] + [SEP_ID], tokenizer)
                                     data_batch.append(data)
                                     mask_batch.append(mask)
                                     label_batch.append(labels)
-                                    buffer = [CLS_ID] + buffer[seq_length - 1:]
+                                    buffer = buffer[seq_length - 2:]
                                 len_data_batch = len(data_batch)
                                 if 'data' in f and 'mask' in f and 'labels' in f:
                                     new_shape = (file_index + len_data_batch, seq_length)
