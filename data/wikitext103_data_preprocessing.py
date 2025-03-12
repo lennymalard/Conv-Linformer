@@ -37,7 +37,6 @@ def text_normalization(text):
 
 def mlm_masking(ids, tokenizer, mask_prob=0.15):
     ids = ids.copy()
-    mask = [0] * len(ids)
     labels = [-100] * len(ids)
     vocab_ids = list(tokenizer.get_vocab().values())
     for i in range(1, len(ids)-1):
@@ -49,9 +48,9 @@ def mlm_masking(ids, tokenizer, mask_prob=0.15):
                 labels[i] = ids[i]
                 ids[i] = MASK_ID
             elif 0.8 < prob <= 0.9:
+                labels[i] = ids[i]
                 ids[i] = choice(vocab_ids)
-            mask[i] = 1
-    return ids, mask, labels
+    return ids, labels
 
 def batch_preprocessing(text_batch):
     ids = []
@@ -94,26 +93,21 @@ def preprocessing_pipeline():
                             token_count += len(ids)
                             if len(buffer) >= seq_length - 2:
                                 while len(buffer) >= seq_length - 2:
-                                    data, mask, labels = mlm_masking([CLS_ID] + buffer[:seq_length - 2] + [SEP_ID], tokenizer)
+                                    data, labels = mlm_masking([CLS_ID] + buffer[:seq_length - 2] + [SEP_ID], tokenizer)
                                     data_batch.append(data)
-                                    mask_batch.append(mask)
                                     label_batch.append(labels)
                                     buffer = buffer[seq_length - 2:]
                                 len_data_batch = len(data_batch)
-                                if 'data' in f and 'mask' in f and 'labels' in f:
+                                if 'data' in f and 'labels' in f:
                                     new_shape = (file_index + len_data_batch, seq_length)
                                     f['data'].resize(new_shape)
-                                    f['mask'].resize(new_shape)
                                     f['labels'].resize(new_shape)
                                     f['data'][-len(data_batch):, :] = data_batch
-                                    f['mask'][-len(mask_batch):, :] = mask_batch
                                     f['labels'][-len(label_batch):, :] = label_batch
                                 else:
                                     f.create_dataset('data', data=data_batch, maxshape=(None, seq_length))
-                                    f.create_dataset('mask', data=mask_batch, maxshape=(None, seq_length))
                                     f.create_dataset('labels', data=label_batch, maxshape=(None, seq_length))
                                 data_batch = []
-                                mask_batch = []
                                 label_batch = []
                                 file_index += len_data_batch
                         text_batch = []
