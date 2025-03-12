@@ -5,10 +5,13 @@ import re
 from random import random, choice
 from tqdm import tqdm
 import sys
+import multiprocessing
 
 SEQ_LENGTHS = [128, 256, 512, 1024]
-DATASET_TOKEN_SIZE = 25_000_000
-PATH = "./pretraining/wikitext103"
+BATCH_SIZE = 4096
+DATASET_TOKEN_SIZE = 2_000_000
+NUM_WORKERS = 6
+PATH = "./pretraining/wikitext103/"
 
 dataset = load_dataset("wikitext", "wikitext-103-v1", split="train",  streaming=True)
 tokenizer = RobertaTokenizerFast.from_pretrained("roberta-base")
@@ -50,40 +53,72 @@ def mlm_masking(ids, tokenizer, mask_prob=0.15):
             mask[i] = 1
     return ids, mask, labels
 
+def batch_preprocessing(text_batch):
+    ids = []
+    for text in text_batch:
+        text = text_cleaning(text)
+        text = text_normalization(text)
+        if not text or text.isspace():
+            continue
+        ids.append(tokenizer.encode(text, add_special_tokens=True))
+    return ids
+
 def preprocessing_pipeline():
+    global NUM_WORKERS
     for seq_length in SEQ_LENGTHS:
         token_count = 0
         buffer = []
+        text_batch = []
+        data_batch = []
+        mask_batch = []
+        label_batch = []
+        file_index = 0
+        len_data_batch = 0
         print(f"\nStarting preprocessing for the {seq_length} sequence length dataset...")
-        with h5py.File(f"{PATH}wikitext2_{seq_length}_validation.hdf5", "w") as f:
-            for i, text in enumerate(tqdm(dataset, file=sys.stdout)):
-                text = text['text']
-                text = text_cleaning(text)
-                text = text_normalization(text)
-                if not text or text.isspace():
-                    continue
-                ids = tokenizer.encode(text, add_special_tokens=True)
-                buffer.extend(ids)
-                token_count += len(ids)
-                if len(buffer) > seq_length - 2:
-                    while len(buffer) > seq_length:
-                        masked_ids, mask, labels = mlm_masking(buffer[:seq_length - 1] + [SEP_ID], tokenizer)
-                        if 'data' in f and 'mask' in f and 'labels' in f:
-                            data = f['data'][:]
-                            new_shape = (data.shape[0] + 1, data.shape[1])
-                            f['data'].resize(new_shape)
-                            f['mask'].resize(new_shape)
-                            f['labels'].resize(new_shape)
-                            f['data'][-1, :] = masked_ids
-                            f['mask'][-1, :] = mask
-                            f['labels'][-1, :] = labels
-                        else:
-                            f.create_dataset('data', data=[masked_ids], maxshape=(None, seq_length))
-                            f.create_dataset('mask', data=[mask], maxshape=(None, seq_length))
-                            f.create_dataset('labels', data=[labels], maxshape=(None, seq_length))
-                        buffer = [CLS_ID] + buffer[seq_length - 1:]
-                if token_count > DATASET_TOKEN_SIZE:
-                    break
+        with h5py.File(f"{PATH}wikitext103_{seq_length}.hdf5", "w") as f:
+            with multiprocessing.Pool(processes=NUM_WORKERS) as pool:
+                for i, text in enumerate(tqdm(dataset, file=sys.stdout)):
+                    text_batch.append([text['text']])
+                    if i % BATCH_SIZE == 0:
+                        try:
+                            ids_batch = pool.map(batch_preprocessing, text_batch)
+                        except Exception as e:
+                            print("Multiprocessing error:", e)
+                            pool.close()
+                            pool.join()
+                            continue
+                        for ids in ids_batch:
+                            if ids:
+                                ids = ids[0]
+                            buffer.extend(ids)
+                            token_count += len(ids)
+                            if len(buffer) >= seq_length - 1:
+                                while len(buffer) >= seq_length - 1:
+                                    data, mask, labels = mlm_masking(buffer[:seq_length - 1] + [SEP_ID], tokenizer)
+                                    data_batch.append(data)
+                                    mask_batch.append(mask)
+                                    label_batch.append(labels)
+                                    buffer = [CLS_ID] + buffer[seq_length - 1:]
+                                len_data_batch = len(data_batch)
+                                if 'data' in f and 'mask' in f and 'labels' in f:
+                                    new_shape = (file_index + len_data_batch, seq_length)
+                                    f['data'].resize(new_shape)
+                                    f['mask'].resize(new_shape)
+                                    f['labels'].resize(new_shape)
+                                    f['data'][-len(data_batch):, :] = data_batch
+                                    f['mask'][-len(mask_batch):, :] = mask_batch
+                                    f['labels'][-len(label_batch):, :] = label_batch
+                                else:
+                                    f.create_dataset('data', data=data_batch, maxshape=(None, seq_length))
+                                    f.create_dataset('mask', data=mask_batch, maxshape=(None, seq_length))
+                                    f.create_dataset('labels', data=label_batch, maxshape=(None, seq_length))
+                                data_batch = []
+                                mask_batch = []
+                                label_batch = []
+                                file_index += len_data_batch
+                        text_batch = []
+                    if token_count > DATASET_TOKEN_SIZE:
+                            break
         print(f"\nFinished preprocessing for the {seq_length} sequence length dataset.")
         print(f"\nTotal tokens: {token_count}")
 
