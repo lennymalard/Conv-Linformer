@@ -149,8 +149,9 @@ class ConvLinformerSelfAttention(nn.Module):
 
         # allow for variable sequence lengths (less than maximum sequence length) by slicing projections
         if kv_len < self.seq_len:
-            kv_projs[0] = deepcopy(kv_projs[0]).weight[:, :kv_len]
-            kv_projs[1] = deepcopy(kv_projs[1]).weight[:, :kv_len]
+            kv_projs = [deepcopy(proj) for proj in kv_projs]
+            kv_projs[0].weight = kv_projs[0].weight[:, :kv_len]
+            kv_projs[1].weight = kv_projs[1].weight[:, :kv_len]
 
         # project keys and values along the sequence length dimension to k
         keys = kv_projs[0](keys)
