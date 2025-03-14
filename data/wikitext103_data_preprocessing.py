@@ -69,7 +69,6 @@ def preprocessing_pipeline():
         buffer = []
         text_batch = []
         data_batch = []
-        mask_batch = []
         label_batch = []
         file_index = 0
         len_data_batch = 0
