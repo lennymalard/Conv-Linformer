@@ -4,6 +4,7 @@ from torch import nn
 import torch.nn.functional as F
 from transformers import PreTrainedModel, PretrainedConfig
 from linformer.reversible import ReversibleSequence, SequentialSequence
+from copy import deepcopy
 
 class ConvLinformerConfig(PretrainedConfig):
     def __init__(
@@ -144,10 +145,12 @@ class ConvLinformerSelfAttention(nn.Module):
         keys = self.to_k(kv_input)
         values = self.to_v(kv_input) if not self.share_kv else keys
 
-        kv_projs = (self.proj_k, self.proj_v if not self.share_kv else self.proj_k)
+        kv_projs = [self.proj_k, self.proj_v if not self.share_kv else self.proj_k]
 
         # allow for variable sequence lengths (less than maximum sequence length) by slicing projections
-        # TODO : Handle variable sequence lengths
+        if kv_len < self.seq_len:
+            kv_projs[0] = deepcopy(kv_projs[0]).weight[:, :kv_len]
+            kv_projs[1] = deepcopy(kv_projs[1]).weight[:, :kv_len]
 
         # project keys and values along the sequence length dimension to k
         keys = kv_projs[0](keys)
