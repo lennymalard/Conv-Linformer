@@ -147,21 +147,7 @@ class ConvLinformerSelfAttention(nn.Module):
         kv_projs = (self.proj_k, self.proj_v if not self.share_kv else self.proj_k)
 
         # allow for variable sequence lengths (less than maximum sequence length) by slicing projections
-        if kv_len < self.seq_len:
-            kv_projs = (
-                nn.Conv1d(
-                    in_channels=kv_len,
-                    out_channels=k,
-                    kernel_size=32,
-                    padding='same'
-                ),
-                nn.Conv1d(
-                    in_channels=kv_len,
-                    out_channels=k,
-                    kernel_size=32,
-                    padding='same'
-                )
-            )
+        # TODO : Handle variable sequence lengths
 
         # project keys and values along the sequence length dimension to k
         keys = kv_projs[0](keys)

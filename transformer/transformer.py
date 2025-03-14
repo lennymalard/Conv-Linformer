@@ -8,8 +8,8 @@ class TransformerConfig(PretrainedConfig):
     def __init__(
             self,
             num_tokens=0,
-            dim=1024,
-            depth=6,
+            dim=512,
+            depth=8,
             heads = 8,
             dropout = 0.
     ):
@@ -31,7 +31,7 @@ class LayerNorm(nn.Module):
 
     def forward(self, x):
         mean = torch.mean(x, dim=-1, keepdim=True)
-        std = torch.std(x, dim=-1, keepdim=True, unbiased=False) # Revoir diff entre BatchNorm et LayerNorm
+        std = torch.std(x, dim=-1, keepdim=True, unbiased=False)
         return self.gamma * ((x - mean)/(std + 1e-8)) + self.beta
 
 class Attention(nn.Module):
