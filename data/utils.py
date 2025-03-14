@@ -19,7 +19,7 @@ class MLMDataset(Dataset):
 
     def __getitem__(self, idx):
         with h5py.File(self.path, 'r') as f:
-            data, label, mask =  (torch.tensor(f[name][idx], device=self.device) for name in self.dataset_names)
+            data, label =  (torch.tensor(f[name][idx], device=self.device) for name in self.dataset_names)
             return {
                 'x': data,
                 'label_ids': label,

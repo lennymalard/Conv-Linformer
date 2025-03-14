@@ -8,10 +8,10 @@ import sys
 import multiprocessing
 
 SEQ_LENGTHS = [128, 256, 512, 1024]
-BATCH_SIZE = 4096
-DATASET_TOKEN_SIZE = 2_000_000
+BATCH_SIZE = 16_384
+DATASET_TOKEN_SIZE = 50_000_000
 NUM_WORKERS = 6
-PATH = "./pretraining/wikitext103/"
+PATH = "pretraining/wikitext50/"
 
 dataset = load_dataset("wikitext", "wikitext-103-v1", split="train",  streaming=True)
 tokenizer = RobertaTokenizerFast.from_pretrained("roberta-base")
