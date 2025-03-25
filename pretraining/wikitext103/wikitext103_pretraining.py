@@ -25,7 +25,7 @@ def arch_selector(arch, configs):
     elif arch == 'conv_linformer' and arch in configs.keys():
         return ConvLinformerLM(configs[arch])
     else:
-        raise ValueError('Unknown architecture {}'.format(arch))
+        raise ValueError(f'Unknown architecture {arch}')
 
 def preprocess_logits_for_metrics(logits, labels):
     logits = torch.argmax(logits, dim=-1)
