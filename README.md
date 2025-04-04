@@ -1,65 +1,64 @@
 # Conv-Linformer: Boosting Linformer’s Performance with Convolution in Small-Scale Settings
 
-This repository contains the code and experiments from my application to the **Eastern European Machine Learning (EEML) Summer School**. The project is divided into two parts:
+This repository contains the code and experiments from my application to the **Eastern European Machine Learning (EEML) Summer School**. The project involves:
 
-1. A **systematic study of Linformer's behavior** in resource-constrained settings (limited data, long sequences, varying learning rates).
-2. A proposed variation — **Conv-Linformer** — designed to improve stability and performance using 1D convolutions in the attention mechanism.
+1. A **systematic study** of Linformer’s behavior under resource constraints,
+2. A proposed variant — **Conv-Linformer** — aimed at improving training stability and performance in those settings.
 
 ---
 
 ## 🧠 Motivation
 
-The [Linformer](https://arxiv.org/abs/2006.04768) reduces the quadratic complexity of standard self-attention using linear projections of keys and values. While effective at scale, **its performance in small-scale settings** (limited data, long sequences, tight compute) remains underexplored.
+The [Linformer](https://arxiv.org/abs/2006.04768) reduces the quadratic complexity of self-attention using low-rank projections of keys and values. While efficient at scale, its performance in **resource-constrained environments** (limited data, long sequences, constrained compute) remains underexplored.
 
-This project aims to:
-- Understand Linformer's **strengths and failure modes** under such constraints,
-- Explore how **simple architectural changes**, like adding 1D convolutions, might mitigate instability and improve performance.
+This project investigates:
+- How Linformer behaves in such settings,
+- Whether simple architectural tweaks can improve its robustness and effectiveness.
 
 ---
 
-## 📊 Phase 1: Studying Linformer Behavior
+## 📊 Part 1: Understanding Linformer
 
-**Setup:**
+**Experimental setup:**
 - **Dataset**: [WikiText-103](https://huggingface.co/datasets/Salesforce/wikitext), subset to 50M tokens.
 - **Sequence lengths**: 128, 256, 512, 1024.
-- **Architecture**: Encoder-only Transformer, 8 layers, hidden size 512, 8 attention heads.
-- **Training**: MLM objective, Hugging Face `Trainer`, AdamW, with warmup (10%) and weight decay (0.001).
+- **Model**: Encoder-only Transformer with 8 layers, hidden size 512, 8 attention heads.
+- **Training**: MLM objective, Hugging Face `Trainer`, AdamW optimizer with 10% warmup and weight decay (0.001).
 
-**Findings:**
-- **Longer sequences** destabilize training, especially at **higher learning rates**.
-- Linformer performs **well at shorter sequence lengths**, but struggles as sequence length increases.
-- Lowering the learning rate improves stability across sequence lengths.
-- The instability may stem from Linformer's **low-rank approximations**, which need more training data to compensate loss of information.
+**Key insights:**
+- **Short sequences** perform well, but **longer sequences** suffer from instability at high learning rates.
+- Lower learning rates stabilize training but may slow convergence.
+- The performance degradation appears tied to Linformer’s **low-rank projections**, which could potentially lose important information when training data is limited.
 
 ---
 
-## 🚀 Phase 2: Conv-Linformer
+## 🚀 Part 2: Conv-Linformer
 
-To address these limitations, I propose **Conv-Linformer**, a hybrid architecture that combines:
-- **Linear projection** in early layers (preserving Linformer’s efficiency and global context),
-- **1D convolution** in later layers (enhancing local pattern extraction in key/value compression).
+To address these issues, I introduce **Conv-Linformer**, a hybrid architecture that:
+
+- Uses **linear projection** in the early layers to retain global context efficiently,
+- Applies **1D convolution** in later layers to improve local pattern extraction.
 
 The convolution uses:
-- Kernel size and stride = `n/k` (sequence length / compression size), preserving linear complexity.
+- **Kernel size and stride** = `n/k` (sequence length divided by compression size), preserving linear complexity.
 
 **Results:**
-- Conv-Linformer achieves **better training stability**, especially on longer sequences.
-- It approaches Transformer-level performance while maintaining linear complexity.
-- It performs **more consistently** than the original Linformer under the same constraints.
+- **Improved training stability** across sequence lengths,
+- **More consistent performance** than Linformer in constrained settings,
+- **Near-Transformer-level results**, with linear complexity intact.
 
 ---
 
 ## 🔗 References
 
-- 📄 Linformer Paper: [Linformer: Self-Attention with Linear Complexity](https://arxiv.org/abs/2006.04768)  
-- 🔗 Linformer Code: [lucidrains/linformer](https://github.com/lucidrains/linformer)  
-- 📚 Dataset: [Salesforce/wikitext](https://huggingface.co/datasets/Salesforce/wikitext)
+- 📄 [Linformer: Self-Attention with Linear Complexity](https://arxiv.org/abs/2006.04768)  
+- 🔗 [lucidrains/linformer](https://github.com/lucidrains/linformer)  
+- 📚 [Salesforce/wikitext](https://huggingface.co/datasets/Salesforce/wikitext)
 
 ---
 
 ## 🌱 Future Work
 
-- Scale to larger datasets to evaluate generalization.
-- Explore different convolution types (e.g., depthwise separable, dilated).
-- Investigate downstream NLP tasks beyond masked language modeling.
-
+- Scale experiments to larger datasets and tasks.
+- Investigate other compression strategies.
+- Evaluate performance on downstream NLP benchmarks.
