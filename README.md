@@ -27,7 +27,7 @@ This project investigates:
 
 **Key insights:**
 - **Short sequences** perform well, but **longer sequences** suffer from instability at high learning rates.
-- Lower learning rates stabilize training but may slow convergence.
+- Lower learning rates stabilize training but may also lead to slower convergence or cause the model to get stuck in a local minimum.
 - The performance degradation appears tied to Linformer’s **low-rank projections**, which could potentially lose important information when training data is limited.
 
 ---
