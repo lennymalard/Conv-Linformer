@@ -1,6 +1,6 @@
 import os
 import torch.cuda
-from data.utils import MLMDataset
+from data.utils import HDF5Dataset
 from transformers import RobertaTokenizerFast, TrainingArguments, TrainerCallback, Trainer, default_data_collator, logging
 from linformer.linformer import *
 from transformer.transformer import *
@@ -78,8 +78,8 @@ def training_pipeline(architecture, seq_length, batch_size, learning_rate=1e-5, 
     elif (architecture == 'linformer' or architecture == 'conv_linformer') and k_dim is None:
         raise ValueError('k_dim has to be used with linformer architecture')
 
-    training_dataset = MLMDataset(F'../../data/pretraining/wikitext50/wikitext103_{seq_length}.hdf5')
-    validation_dataset = MLMDataset(F'../../data/pretraining/wikitext2/wikitext2_{seq_length}_validation.hdf5')
+    training_dataset = HDF5Dataset(F'../../data/pretraining/wikitext50/wikitext103_{seq_length}.hdf5')
+    validation_dataset = HDF5Dataset(F'../../data/pretraining/wikitext2/wikitext2_{seq_length}_validation.hdf5')
     tokenizer = RobertaTokenizerFast.from_pretrained('roberta-base')
 
     BATCH_SIZE = batch_size

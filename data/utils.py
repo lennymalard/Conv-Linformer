@@ -2,7 +2,7 @@ import torch
 from torch.utils.data import Dataset
 import h5py
 
-class MLMDataset(Dataset):
+class HDF5Dataset(Dataset):
     def __init__(self, path, device=torch.device('cpu')):
         self.path = path
         self.device = device

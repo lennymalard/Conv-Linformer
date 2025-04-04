@@ -2,7 +2,7 @@ import os
 
 import torch.cuda
 
-from data.utils import MLMDataset
+from data.utils import HDF5Dataset
 from transformers import RobertaTokenizerFast, TrainingArguments, TrainerCallback, Trainer, default_data_collator, \
     TrainerState, TrainerControl, logging
 from torch.utils.data import DataLoader
@@ -16,8 +16,8 @@ from math import ceil
 
 SEQ_LENGTH = 256
 
-training_dataset = MLMDataset(F'../../data/pretraining/wikitext2/wikitext2_{SEQ_LENGTH}.hdf5')
-validation_dataset = MLMDataset(F'../../data/pretraining/wikitext2/wikitext2_{SEQ_LENGTH}_validation.hdf5')
+training_dataset = HDF5Dataset(F'../../data/pretraining/wikitext2/wikitext2_{SEQ_LENGTH}.hdf5')
+validation_dataset = HDF5Dataset(F'../../data/pretraining/wikitext2/wikitext2_{SEQ_LENGTH}_validation.hdf5')
 tokenizer = RobertaTokenizerFast.from_pretrained('roberta-base')
 
 BATCH_SIZE = 8
