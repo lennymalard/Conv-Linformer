@@ -1,1 +1,1 @@
-from linformer.linformer import ConvLinformerLM, ConvLinformer, ConvLinformerSelfAttention
+from conv_linformer.conv_linformer import ConvLinformerLM, ConvLinformer, ConvLinformerSelfAttention

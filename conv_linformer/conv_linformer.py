@@ -37,8 +37,6 @@ class ConvLinformerConfig(PretrainedConfig):
     def __repr__(self):
         return str(self.__dict__)
 
-# helper functions
-
 def default(val, default_val):
     return val if val is not None else default_val
 
@@ -47,8 +45,6 @@ def init_(tensor):
     std = 1 / math.sqrt(dim)
     tensor.uniform_(-std, std)
     return tensor
-
-# helper classes
 
 class Residual(nn.Module):
     def __init__(self, fn):

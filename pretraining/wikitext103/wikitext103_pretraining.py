@@ -10,6 +10,7 @@ import sys, os
 import numpy as np
 from transformers.trainer_callback import PrinterCallback, EarlyStoppingCallback
 from math import ceil
+from datetime import datetime
 
 BATCH_SIZE = None
 FULL_BATCH_SIZE = None
@@ -55,10 +56,7 @@ class TrainingCallback(TrainerCallback):
         self.step_bar.close()
 
     def on_train_end(self, args, state, control, **kwargs):
-        memory_allocated = f"\nMax memory allocated: {torch.cuda.max_memory_allocated()}"
-        print(memory_allocated)
-        with open(args.logging_dir + '/max_memory.txt', 'w') as f:
-            f.write(memory_allocated)
+        pass
 
 class CustomTrainer(Trainer):
     def create_progress_bar(self, *args, **kwargs):
@@ -67,12 +65,7 @@ class CustomTrainer(Trainer):
 def training_pipeline(architecture, seq_length, batch_size, learning_rate=1e-5, k_dim=None):
     torch.cuda.empty_cache()
 
-    print(f"Starting training...\nArchitecture: {architecture}, Seq Length: {seq_length}, Batch Size: {batch_size}, k dim: {k_dim}, Learning Rate: {learning_rate}")
-
-    if os.path.exists(f'./{architecture}/{learning_rate}/{seq_length}/pretrained_model/logs/max_memory.txt') if architecture == 'transformer' \
-            else os.path.exists(f'./{architecture}/{learning_rate}/{seq_length}/k_{k_dim}/pretrained_model/logs/max_memory.txt'):
-        print("Model already trained.")
-        return
+    print(f"Starting training...\ndate_time: {datetime.now().strftime("%d/%m/%Y, %H:%M:%S")}, architecture: {architecture}, seq_length: {seq_length}, batch_size: {batch_size}, k_dim: {k_dim}, learning_rate: {learning_rate}")
 
     global BATCH_SIZE
     global FULL_BATCH_SIZE
@@ -141,7 +134,7 @@ def training_pipeline(architecture, seq_length, batch_size, learning_rate=1e-5, 
         report_to='tensorboard',
         log_level='error',
         disable_tqdm=True,
-        num_train_epochs=20,
+        num_train_epochs=12,
         learning_rate=learning_rate,
         weight_decay=0.001,
         warmup_ratio=0.1,
@@ -174,8 +167,11 @@ def training_pipeline(architecture, seq_length, batch_size, learning_rate=1e-5, 
 
     trainer.remove_callback(PrinterCallback)
 
-    if not os.listdir(f'./{architecture}/{learning_rate}/{seq_length}/pretrained_model/outputs' if architecture == 'transformer'
-        else f'./{architecture}/{learning_rate}/{seq_length}/k_{k_dim}/pretrained_model/outputs'):
+    if os.path.exists(training_args.logging_dir + "/info.txt"):
+        print("Model already trained.")
+        return
+
+    if not os.listdir(training_args.output_dir):
         trainer.train()
     else:
         trainer.train(resume_from_checkpoint=True)
@@ -187,6 +183,10 @@ def training_pipeline(architecture, seq_length, batch_size, learning_rate=1e-5, 
         model.save_pretrained(f'./{architecture}/{learning_rate}/{seq_length}/k_{k_dim}/pretrained_model')
         tokenizer.save_pretrained(f'./{architecture}/{learning_rate}/{seq_length}/k_{k_dim}/pretrained_model')
 
+    info = f"date_time: {datetime.now().strftime("%d/%m/%Y, %H:%M:%S")}, architecture: {architecture}, seq_length: {seq_length}, batch_size: {batch_size}, k_dim: {k_dim}, learning_rate: {learning_rate}"
+    with open(training_args.logging_dir + '/info.txt', 'w') as f:
+        f.write(info)
+
 if __name__ == '__main__':
     for lr in LEARNING_RATES:
         batch_size = 8
@@ -197,6 +197,6 @@ if __name__ == '__main__':
                 training_pipeline('linformer', seq_length=seq_length, batch_size=batch_size, k_dim=k, learning_rate=lr)
                 training_pipeline('conv_linformer', seq_length=seq_length, batch_size=batch_size, k_dim=k, learning_rate=lr)
             training_pipeline('transformer', seq_length=seq_length, batch_size=batch_size, learning_rate=lr)
-            batch_size/=2
+            batch_size//=2
 
 
