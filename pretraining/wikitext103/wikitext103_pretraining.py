@@ -179,7 +179,7 @@ def training_pipeline(architecture, seq_length, batch_size, learning_rate=1e-5, 
     if architecture == 'transformer':
         model.save_pretrained(f'./{architecture}/{learning_rate}/{seq_length}/pretrained_model')
         tokenizer.save_pretrained(f'./{architecture}/{learning_rate}/{seq_length}/pretrained_model')
-    elif architecture == 'linformer' or 'conv_linformer':
+    elif architecture in ['linformer', 'conv_linformer']:
         model.save_pretrained(f'./{architecture}/{learning_rate}/{seq_length}/k_{k_dim}/pretrained_model')
         tokenizer.save_pretrained(f'./{architecture}/{learning_rate}/{seq_length}/k_{k_dim}/pretrained_model')
 
