@@ -92,79 +92,119 @@ class FeedForward(nn.Module):
         return x
 
 class ConvLinformerSelfAttention(nn.Module):
-    #TODO Merge it with LinformerSelfAttention
     def __init__(self, dim, seq_len, k = 256, heads = 8, dim_head = None, one_kv_head = False, share_kv = False, dropout = 0.):
         super().__init__()
         assert (dim % heads) == 0, 'dimension must be divisible by the number of heads'
+        assert k > 0, "k must be positive"
+        if seq_len < k:
+            print(f"Warning: seq_len ({seq_len}) < k ({k}). Convolution might not behave as expected. Consider padding or adjusting k.")
+            conv_kernel_stride = 1
+        elif seq_len % k != 0:
+             print(f"Warning: seq_len ({seq_len}) is not divisible by k ({k}). Using floor division for kernel/stride, output size might not be exactly k.")
+             conv_kernel_stride = seq_len // k
+             if conv_kernel_stride == 0:
+                 conv_kernel_stride = 1
+        else:
+             conv_kernel_stride = seq_len // k
 
         self.seq_len = seq_len
         self.k = k
-
         self.heads = heads
 
-        dim_head = default(dim_head, dim // heads)
-        self.dim_head = dim_head
+        self.dim_head = default(dim_head, dim // heads)
 
-        self.to_q = nn.Linear(dim, dim_head * heads, bias = False)
+        self.one_kv_head = one_kv_head
+        self.kv_heads = 1 if one_kv_head else heads
+        self.kv_dim = self.dim_head
 
-        kv_dim = dim_head if one_kv_head else (dim_head * heads)
-        self.to_k = nn.Linear(dim, kv_dim, bias = False)
+        kv_total_dim = self.kv_dim * self.kv_heads
+
+        self.to_q = nn.Linear(dim, self.dim_head * heads, bias=False)
+
+        self.to_k = nn.Linear(dim, kv_total_dim, bias=False)
         self.proj_k = nn.Conv1d(
-            in_channels=dim,
-            out_channels=dim,
-            kernel_size=seq_len//k,
-            stride=seq_len//k,
+            in_channels=kv_total_dim,
+            out_channels=kv_total_dim,
+            kernel_size=conv_kernel_stride,
+            stride=conv_kernel_stride,
             bias=False
         )
 
         self.share_kv = share_kv
         if not share_kv:
-            self.to_v = nn.Linear(dim, kv_dim, bias = False)
+            self.to_v = nn.Linear(dim, kv_total_dim, bias=False)
             self.proj_v = nn.Conv1d(
-                in_channels=dim,
-                out_channels=dim,
-                kernel_size=seq_len//k,
-                stride=seq_len//k,
+                in_channels=kv_total_dim,
+                out_channels=kv_total_dim,
+                kernel_size=conv_kernel_stride,
+                stride=conv_kernel_stride,
                 bias=False
             )
+        else:
+            self.to_v = self.to_k if self.one_kv_head else None
+            if not self.one_kv_head:
+                 self.to_v = nn.Linear(dim, kv_total_dim, bias=False)
+            self.proj_v = self.proj_k
 
         self.dropout = nn.Dropout(dropout)
-        self.to_out = nn.Linear(dim_head * heads, dim)
+        self.to_out = nn.Linear(self.dim_head * heads, dim)
 
     def forward(self, x, context = None, **kwargs):
-        b, n, d, d_h, h, k = *x.shape, self.dim_head, self.heads, self.k
-
-        kv_len = n if context is None else context.shape[1]
-        assert kv_len <= self.seq_len, f'the sequence length of the key / values must be {self.seq_len} - {kv_len} given'
-
-        queries = self.to_q(x)
+        b, n, d, h, d_h, k = *x.shape, self.heads, self.dim_head, self.k
 
         kv_input = x if context is None else context
+        kv_len = kv_input.shape[1]
 
+        assert kv_len <= self.seq_len, f'Input sequence length ({kv_len}) cannot exceed the maximum configured sequence length ({self.seq_len})'
+
+        queries = self.to_q(x)
         keys = self.to_k(kv_input)
-        values = self.to_v(kv_input) if not self.share_kv else keys
 
-        kv_projs = [self.proj_k, self.proj_v if not self.share_kv else self.proj_k]
+        if self.share_kv:
+             if self.one_kv_head:
+                 values = keys
+             else:
+                 values = self.to_v(kv_input)
+        else:
+             values = self.to_v(kv_input)
 
+        keys = keys.transpose(-1, -2)
+        values = values.transpose(-1, -2)
+
+        padding_value = 0
         if kv_len < self.seq_len:
-            kv_projs = [deepcopy(proj) for proj in kv_projs]
-            kv_projs[0].weight = kv_projs[0].weight[:, :kv_len]
-            kv_projs[1].weight = kv_projs[1].weight[:, :kv_len]
+            pad_width = self.seq_len - kv_len
+            keys = F.pad(keys, (0, pad_width), mode='constant', value=padding_value)
+            values = F.pad(values, (0, pad_width), mode='constant', value=padding_value)
+        elif kv_len > self.seq_len:
+             keys = keys[..., :self.seq_len]
+             values = values[..., :self.seq_len]
 
-        keys = kv_projs[0](keys.transpose(-1,-2)).transpose(-1,-2)
-        values = kv_projs[1](values.transpose(-1,-2)).transpose(-1,-2)
+        projected_keys = self.proj_k(keys)
+        projected_values = self.proj_v(values)
 
-        queries = queries.reshape(b, n, h, -1).transpose(1, 2)
+        projected_keys = projected_keys.transpose(-1, -2)
+        projected_values = projected_values.transpose(-1, -2)
 
-        merge_key_values = lambda t: t.reshape(b, k, -1, d_h).transpose(1, 2).expand(-1, h, -1, -1)
-        keys, values = map(merge_key_values, (keys, values))
+        proj_len = projected_keys.shape[1]
 
-        dots = torch.einsum('bhnd,bhkd->bhnk', queries, keys) * (d_h ** -0.5)
+        queries = queries.reshape(b, n, h, d_h).transpose(1, 2)
+
+        projected_keys = projected_keys.reshape(b, proj_len, self.kv_heads, self.kv_dim).transpose(1, 2)
+        projected_values = projected_values.reshape(b, proj_len, self.kv_heads, self.kv_dim).transpose(1, 2)
+
+        if self.kv_heads == 1:
+            projected_keys = projected_keys.repeat(1, h, 1, 1)
+            projected_values = projected_values.repeat(1, h, 1, 1)
+
+        scale = d_h ** -0.5
+        dots = torch.einsum('bhnd,bhkd->bhnk', queries, projected_keys) * scale
         attn = dots.softmax(dim=-1)
         attn = self.dropout(attn)
-        out = torch.einsum('bhnk,bhkd->bhnd', attn, values)
 
+        out = torch.einsum('bhnk,bhkd->bhnd', attn, projected_values)
         out = out.transpose(1, 2).reshape(b, n, -1)
+
         return self.to_out(out)
 
 class LinformerSelfAttention(nn.Module):
