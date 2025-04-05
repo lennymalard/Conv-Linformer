@@ -17,7 +17,7 @@ This project investigates:
 
 ---
 
-## 📊 Part 1: Understanding Linformer
+## 📊 Part 1: Reproducing Linformer
 
 **Experimental setup:**
 - **Dataset**: [WikiText-103](https://huggingface.co/datasets/Salesforce/wikitext), subset to 50M tokens.
