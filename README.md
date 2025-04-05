@@ -28,7 +28,7 @@ Key elements of Linformer's mechanism:
 ### Linformer Attention Equation:
 
 $$
-\text{Attention}(Q, K, V) = \text{softmax}\left( \frac{Q (E K)^T}{\sqrt{d_k}} \right) \cdot (F V)
+\text{Attention}(Q, K, V) = \text{softmax}\left( \frac{Q (E K)^T}{\sqrt{d_k}} \right) \cdot F V
 $$
 
 Where:
