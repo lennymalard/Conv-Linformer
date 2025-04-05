@@ -108,7 +108,7 @@ We compare the average inference time per batch for each model across different 
 
 **Key observations:**
 - Conv-Linformer introduces **minimal overhead**.
-- Time scales linearly with sequence length for both models.
+- Time scales linearly with sequence length for both Linformer and Conv-Linformer.
 
 ---
 
