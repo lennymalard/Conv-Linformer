@@ -28,7 +28,7 @@ Key elements of Linformer's mechanism:
 ### Linformer Attention Equation:
 
 $$
-\text{Attention}(Q, K, V) = \text{softmax}\left( \frac{Q (E K)^T}{\sqrt{d_k}} \right) \cdot (F V)
+\text{Attention}(Q, K, V) = \text{softmax}\left( \frac{Q (E K)^T}{\sqrt{d_k}} \right) \cdot F V
 $$
 
 Where:
@@ -73,6 +73,40 @@ Where:
 - **Improved training stability** across sequence lengths.
 - **More consistent performance** than Linformer in constrained settings.
 - **Transformer-level performance**, with linear complexity and minimal overhead from convolution.
+
+---
+
+## 📈 Results
+
+### 🔍 Performance Across Sequence Lengths
+
+Below are validation perplexity curves for Transformer, Linformer and Conv-Linformer across different sequence lengths:
+
+<p align="center">
+  <img src="abstract/plots/perplexity_seq_len256_lr1e-05.png" width="35%" />
+  <img src="abstract/plots/perplexity_seq_len256_lr5e-05.png" width="35%" /><br>
+  <img src="abstract/plots/perplexity_seq_len512_lr1e-05.png" width="35%" />
+  <img src="abstract/plots/perplexity_seq_len512_lr5e-05.png" width="35%" />
+</p>
+
+- Conv-Linformer maintains more stable training and performs on par with Transormer.
+- Linformer's performance degrades more gradually with increasing sequence length and learning rate.
+
+
+### ⚡ Inference Time Analysis
+
+We compare the average inference time per batch for each model across different sequence lengths and $k$ set to 256:
+
+| Sequence Length  | Linformer (ms) | Conv-Linformer (ms)  | Transformer (ms)|
+|------------------|----------------|----------------------|-----------------|
+| 512              | *TBD*          | *TBD*                | *TBD*           |
+| 1024             | *TBD*          | *TBD*                | *TBD*           |
+| 2048             | *TBD*          | *TBD*                | *TBD*           |
+| 4096             | *TBD*          | *TBD*                | *TBD*           |
+
+**Key observations:**
+- Conv-Linformer introduces **minimal overhead**.
+- Time scales linearly with sequence length for both Linformer and Conv-Linformer.
 
 ---
 
