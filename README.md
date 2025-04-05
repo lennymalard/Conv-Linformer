@@ -89,8 +89,8 @@ Below are validation perplexity curves for Transformer, Linformer and Conv-Linfo
   <img src="abstract/plots/perplexity_seq_len512_lr5e-05.png" width="35%" />
 </p>
 
-- Conv-Linformer maintains more stable training.
-- Linformer's validation perplexity degrades more gradually with increasing sequence length.
+- Conv-Linformer maintains more stable training and performs on par with Transormer.
+- Linformer's performance degrades more gradually with increasing sequence length.
 
 
 ### ⚡ Inference Time Analysis
