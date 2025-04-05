@@ -144,7 +144,6 @@ class LinformerSelfAttention(nn.Module):
         merge_key_values = lambda t: t.reshape(b, k, -1, d_h).transpose(1, 2).expand(-1, h, -1, -1)
         keys, values = map(merge_key_values, (keys, values))
 
-
         dots = torch.einsum('bhnd,bhkd->bhnk', queries, keys) * (d_h ** -0.5)
         attn = dots.softmax(dim=-1)
         attn = self.dropout(attn)
