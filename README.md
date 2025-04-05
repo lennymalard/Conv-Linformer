@@ -30,6 +30,14 @@ This project investigates:
 - Lower learning rates stabilize training but may also lead to slower convergence or cause the model to get stuck in a local minimum.
 - The performance degradation appears tied to Linformer’s **low-rank projections**, which struggle to learn important information when training data is limited.
 
+**Linformer Equation:**
+
+$$
+\text{Attention}(Q, K, V) = \text{softmax}\left( \frac{Q (E K)^T}{\sqrt{d_k}} \right) \cdot (F V)
+$$
+
+- $E$ and $F$ are projection matrices reducing $K$ and $V$ from $n$ to $k$, enabling linear complexity $O(n k)$.
+
 ---
 
 ## 🚀 Part 2: Conv-Linformer
@@ -40,12 +48,20 @@ To address these issues, I introduce **Conv-Linformer**, a hybrid architecture t
 - Applies **1D convolution** in later layers to improve local pattern extraction.
 
 The convolution uses:
-- **Kernel size and stride** = `n/k` (sequence length divided by compression size), preserving linear complexity.
+- **Kernel size and stride** = $n/k$ (sequence length divided by compression size), preserving linear complexity.
 
 **Results:**
 - **Improved training stability** across sequence lengths,
 - **More consistent performance** than Linformer in constrained settings,
 - **Near-Transformer-level results**, with linear complexity and minor overhead from convolution.
+
+**Conv-Linformer Equation:**
+
+$$
+\text{Attention}(Q, K, V) = \text{softmax}\left( \frac{Q (F_k * K)^T}{\sqrt{d_k}} \right) \cdot (F_v * V)
+$$
+
+- $F_k$ and $F_v$ are convolutional kernels with size and stride $n/k$, enhancing local feature capture while keeping $O(n k)$ complexity.
 
 ---
 
