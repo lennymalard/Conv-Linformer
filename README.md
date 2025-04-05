@@ -19,7 +19,7 @@ This project investigates:
 
 ## 🔬 Linformer: Understanding the Core Mechanism
 
-Linformer’s core innovation is **low-rank approximation** of the self-attention mechanism to reduce its time and memory complexity. Traditional self-attention requires quadratic time complexity $O(n^2)$, where $n$ is the sequence length. Linformer reduces this complexity to linear $O(nk)$, where $k$ is a smaller constant representing the rank of the approximated attention matrices.
+Linformer’s core innovation is **low-rank approximation** of the self-attention mechanism to reduce its time and memory complexity. Traditional self-attention requires quadratic time complexity $O(n^2)$, where $n$ is the sequence length. Linformer reduces this complexity to linear $O(nk)$, where $k$ is a smaller constant representing the approximation dimension.
 
 Key elements of Linformer's mechanism:
 1. **Low-Rank Projections**: Instead of computing the attention across the entire sequence, Linformer approximates the key and value matrices by using **learnable projections**. This reduces the sequence length to a fixed smaller value.
