@@ -45,7 +45,7 @@ The convolution uses:
 **Results:**
 - **Improved training stability** across sequence lengths,
 - **More consistent performance** than Linformer in constrained settings,
-- **Near-Transformer-level results**, with linear complexity intact.
+- **Near-Transformer-level results**, with linear complexity and minor overhead from convolution.
 
 ---
 
