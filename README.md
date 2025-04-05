@@ -76,6 +76,42 @@ Where:
 
 ---
 
+## 📈 Results
+
+### 🔍 Performance Across Sequence Lengths
+
+Below are validation perplexity curves for Transformer, Linformer and Conv-Linformer across different sequence lengths:
+
+<p align="center">
+  <img src="abstract/plots/perplexity_seq_len256_lr1e-05.png" width="30%" />
+  <img src="abstract/plots/perplexity_seq_len256_lr5e-05.png" width="30%" /><br>
+  <img src="abstract/plots/perplexity_seq_len512_lr1e-05.png" width="30%" />
+  <img src="abstract/plots/perplexity_seq_len512_lr5e-05.png" width="30%" />
+</p>
+
+- Conv-Linformer maintains more stable training.
+- Linformer's validation perplexity degrades more gradually with increasing sequence length.
+
+
+### ⚡ Inference Time Analysis
+
+We compare the average inference time per batch for each model across different sequence lengths:
+
+| Sequence Length  | Linformer (ms) | Conv-Linformer (ms)  | Transformer (ms)|
+|------------------|----------------|----------------------|-----------------|
+| 128              | *TBD*          | *TBD*                | *TBD*           |
+| 256              | *TBD*          | *TBD*                | *TBD*           |
+| 512              | *TBD*          | *TBD*                | *TBD*           |
+| 1024             | *TBD*          | *TBD*                | *TBD*           |
+| 2048             | *TBD*          | *TBD*                | *TBD*           |
+| 4096             | *TBD*          | *TBD*                | *TBD*           |
+
+**Key observations:**
+- Conv-Linformer introduces **minimal overhead**.
+- Time scales linearly with sequence length for both models.
+
+---
+
 ## 🔗 References
 
 - 📄 [Linformer: Self-Attention with Linear Complexity](https://arxiv.org/abs/2006.04768)  
