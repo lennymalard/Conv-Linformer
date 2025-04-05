@@ -83,10 +83,10 @@ Where:
 Below are validation perplexity curves for Transformer, Linformer and Conv-Linformer across different sequence lengths:
 
 <p align="center">
-  <img src="abstract/plots/perplexity_seq_len256_lr1e-05.png" width="30%" />
-  <img src="abstract/plots/perplexity_seq_len256_lr5e-05.png" width="30%" /><br>
-  <img src="abstract/plots/perplexity_seq_len512_lr1e-05.png" width="30%" />
-  <img src="abstract/plots/perplexity_seq_len512_lr5e-05.png" width="30%" />
+  <img src="abstract/plots/perplexity_seq_len256_lr1e-05.png" width="35%" />
+  <img src="abstract/plots/perplexity_seq_len256_lr5e-05.png" width="35%" /><br>
+  <img src="abstract/plots/perplexity_seq_len512_lr1e-05.png" width="35%" />
+  <img src="abstract/plots/perplexity_seq_len512_lr5e-05.png" width="35%" />
 </p>
 
 - Conv-Linformer maintains more stable training.
