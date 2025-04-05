@@ -72,7 +72,7 @@ Where:
 ### Key Benefits:
 - **Improved training stability** across sequence lengths.
 - **More consistent performance** than Linformer in constrained settings.
-- **Near-Transformer-level performance**, with linear complexity and minimal overhead from convolution.
+- **Transformer-level performance**, with linear complexity and minimal overhead from convolution.
 
 ---
 
