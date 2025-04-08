@@ -9,7 +9,7 @@ This repository contains the code and experiments from my application to the **E
 
 ## 🧠 Motivation
 
-The [Linformer](https://arxiv.org/abs/2006.04768) reduces the quadratic complexity of self-attention by leveraging low-rank projections of keys and values. While efficient at scale, its performance in **resource-constrained environments** (e.g., limited data, constrained compute) remains underexplored.
+The [Linformer](https://arxiv.org/abs/2006.04768) reduces the quadratic complexity of self-attention by leveraging low-rank projections of keys and values. While efficient at scale, its performance in **resource-constrained environments** (i.e., limited data, constrained compute) remains underexplored.
 
 This project investigates:
 - How Linformer behaves in such settings.
