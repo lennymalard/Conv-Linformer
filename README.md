@@ -120,7 +120,7 @@ We compare the average inference time per batch for each model across different 
 
 ## 🌱 Future Work
 
-- Scale experiments to larger datasets and tasks.
+- Scale experiments to larger datasets and sequence lengths.
 - Investigate additional compression strategies.
 - Evaluate performance on downstream NLP benchmarks.
 
