@@ -95,7 +95,7 @@ Below are validation perplexity curves for Transformer, Linformer and Conv-Linfo
 
 ### ⚡ Inference Time Analysis
 
-We compare the average inference time per batch for each model across different sequence lengths with $k$ set to 256:
+We compare the average inference time per sample for each model across different sequence lengths with $k$ set to 256:
 
 | Sequence Length  | Linformer (s)  | Conv-Linformer (s)   | Transformer (s) |
 |------------------|----------------|----------------------|-----------------|
