@@ -1,6 +1,6 @@
 # Conv-Linformer: Boosting Linformer’s Performance with Convolution in Small-Scale Settings
 
-This repository contains the code and experiments from my application to the **Eastern European Machine Learning (EEML) Summer School**. The project involves:
+This repository contains the code and experiments from my application to the **Eastern European Machine Learning (EEML) Summer School 2025**. The project involves:
 
 1. A **systematic study** of Linformer’s behavior under resource constraints.
 2. A proposed variant — **Conv-Linformer** — aimed at improving training stability and performance in these settings.
