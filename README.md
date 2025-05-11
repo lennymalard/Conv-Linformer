@@ -3,7 +3,7 @@
 This repository contains the code and experiments from my application to the **Eastern European Machine Learning (EEML) Summer School 2025**. The project involves:
 
 1. A **systematic study** of Linformer’s behavior under resource constraints.
-2. A proposed variant — **Conv-Linformer** — aimed at improving training stability and performance in these settings.
+2. A proposed variant — [**Conv-Linformer**](https://doi.org/10.5281/zenodo.15381219) — aimed at improving training stability and performance in these settings.
 
 ---
 
@@ -112,7 +112,8 @@ We compare the average inference time per sample for each model across different
 
 ## 🔗 References
 
-- 📄 [Linformer: Self-Attention with Linear Complexity](https://arxiv.org/abs/2006.04768)  
+- 📄 [Linformer: Self-Attention with Linear Complexity](https://arxiv.org/abs/2006.04768)
+- 📄 [Conv-Linformer: Boosting Linformer's Performance with Convolution in Small-Scale Settings](https://doi.org/10.5281/zenodo.15381219)
 - 🔗 [lucidrains/linformer](https://github.com/lucidrains/linformer)  
 - 📚 [Salesforce/wikitext](https://huggingface.co/datasets/Salesforce/wikitext)
 
