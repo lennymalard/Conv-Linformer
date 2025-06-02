@@ -4,7 +4,7 @@ import os
 from tbparse import SummaryReader
 from tensorboard.backend.event_processing.event_accumulator import EventAccumulator
 
-PATH = "/home/lenny/Documents/DEV/git/lilformer/pretraining/wikitext103"
+PATH = ...
 
 plt.rcParams['axes.prop_cycle'] = plt.cycler(color=[
     '#1f77b4',
