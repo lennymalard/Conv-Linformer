@@ -116,10 +116,10 @@ class Transformer(nn.Module):
             ) for _ in range(depth)
         ])
     
-    def forward(self, x):
+    def forward(self, x, attn_mask=None, pad_mask=None):
         for layer in self.layers:
             mha, ffn = layer
-            x = mha(x, x, x)
+            x = mha(x, x, x, attn_mask=attn_mask, pad_mask=pad_mask)
             x = ffn(x)
         return x
     
@@ -137,10 +137,10 @@ class TransformerLM(PreTrainedModel):
             dropout=config.dropout
         )
 
-    def forward(self, x, labels=None):
+    def forward(self, x, labels=None, attn_mask=None, pad_mask=None):
         x = self.embedding(x)
         x = self.positional_encoding(x)
-        x = self.transformer(x)
+        x = self.transformer(x, attn_mask=attn_mask, pad_mask=pad_mask)
         out = self.to_logits(x)
         if labels is not None:
             out = out.view(-1, self.config.num_tokens)
